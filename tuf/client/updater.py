@@ -1132,8 +1132,8 @@ class Updater(object):
         if mirror_error.code in WHITELIST:
           return False
       elif isinstance(mirror_error, requests.exceptions.HTTPError):
-        if mirror_error.response.status_code in WHITELIST:
-          return False
+        print(type(mirror_error))
+        raise mirror_error
       return True
 
     # Temporarily set consistent snapshot. Will be updated to whatever is set

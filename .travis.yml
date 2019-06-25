@@ -22,8 +22,8 @@ after_success:
   - coveralls
   - cd -
 
-branches:
-  only:
-    - develop
-    - pylint
-    - bandit
+# branches:
+  # only:
+  #   - develop
+  #   - pylint
+  #   - bandit
