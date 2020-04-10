@@ -387,16 +387,23 @@ def _download_fixed_amount_of_data(response, temp_file, required_length):
         break
 
   except urllib3.exceptions.ReadTimeoutError as e:
-    # Whatever happens, make sure that we always close the connection.
-    response.close()
+    # FIXME: This raises something like ...
+    #
+    # tuf.exceptions.SlowRetrievalError:
+    #     Download was too slow.
+    #     Average speed: "HTTPConnectionPool(host='localhost', port=34132): Read timed out." bytes per second.
+    #
+    # ...  which doesn't make sense.
+    #
+    # TODO: raise different error, or change SlowRetrievalError message, or
+    # pass 0 as average_download_speed
     raise tuf.exceptions.SlowRetrievalError(str(e))
 
-  except:
+  finally:
     # Whatever happens, make sure that we always close the connection.
     response.close()
-    raise
 
-  response.close()
+
   return number_of_bytes_received, average_download_speed
 
 
