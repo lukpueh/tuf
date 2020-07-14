@@ -62,8 +62,10 @@ import tuf.repository_tool as repo_tool
 import tuf.unittest_toolbox as unittest_toolbox
 import tuf.client.updater as updater
 import tuf.settings
+import tuf.repository_lib
 
 import securesystemslib
+import securesystemslib.util
 import six
 
 logger = logging.getLogger(__name__)
@@ -216,6 +218,60 @@ class TestUpdater(unittest_toolbox.Modified_TestCase):
     shutil.copytree(os.path.join(self.repository_directory, 'metadata.staged'),
                     os.path.join(self.repository_directory, 'metadata'))
     self.repository_updater.refresh()
+
+
+  def test_BUG_ROOT_NOT_VERIFIED_WITH_CURRENT_KEYIDS_AND_THRESHOLD(self):
+    """
+    Minimal Breaking Example
+
+    As per the spec, each root file must be signed by the current root
+    threshold of keys as well as the previous root threshold of keys.
+
+    This code demonstrates how the updater implementation does not fail
+    as expected on a bad signature by the current root key (because it
+    does not verify it).
+
+    """
+    # Load repository with root.json == 1.root.json (available on client)
+    # Signing key: "root", Threshold: 1
+    repository = repo_tool.load_repository(self.repository_directory)
+
+    # Rotate keys and update root: 1.root.json --> 2.root.json
+    # Signing key: "root" (previous) and "root2" (current)
+    # Threshold (for both): 1
+    repository.root.load_signing_key(self.role_keys['root']['private'])
+    repository.root.add_verification_key(self.role_keys['root2']['public'])
+    repository.root.load_signing_key(self.role_keys['root2']['private'])
+    repository.writeall()
+
+    # Move staged metadata to "live" metadata
+    shutil.rmtree(os.path.join(self.repository_directory, 'metadata'))
+    shutil.copytree(os.path.join(self.repository_directory, 'metadata.staged'),
+        os.path.join(self.repository_directory, 'metadata'))
+
+    #######################################################################
+    # Intercept 2.root.json and tamper with "root2" (current) key signature
+    root2_path_live = os.path.join(
+        self.repository_directory, 'metadata', '2.root.json')
+    root2 = securesystemslib.util.load_json_file(root2_path_live)
+
+    for idx, sig in enumerate(root2['signatures']):
+      if sig['keyid'] == self.role_keys['root2']['public']['keyid']:
+        root2['signatures'][idx]['sig'] = "deadbeef"
+
+    roo2_fobj = tempfile.TemporaryFile()
+    roo2_fobj.write(tuf.repository_lib._get_written_metadata(root2))
+    securesystemslib.util.persist_temp_file(roo2_fobj, root2_path_live)
+    #######################################################################
+
+
+    # Update 1.root.json -> 2.root.json
+    # Signature verification with current keys should fail because we replaced
+    with self.assertRaises(securesystemslib.exceptions.BadSignatureError):
+      self.repository_updater.refresh()
+
+
+
 
 
 
