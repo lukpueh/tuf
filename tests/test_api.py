@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: MIT OR Apache-2.0
 """ Unit tests for api/metadata.py
 
-Skipped on Python < 3.6.
-
 """
 
 import json
@@ -19,6 +17,7 @@ import unittest
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+# TODO: Remove case handling when fully dropping support for versions >= 3.6
 IS_PY_VERSION_SUPPORTED = sys.version_info >= (3, 6)
 
 # Use setUpModule to tell unittest runner to skip this test module gracefully.

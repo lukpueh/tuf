@@ -16,11 +16,17 @@ TODO:
      disable check as there might be a justified reason to write WIP
      metadata to json.
 
+   - consider using in-toto style ValidationMixin, e.g.:
+     https://github.com/in-toto/in-toto/blob/74da7a/in_toto/models/common.py#L27-L40
+     https://github.com/in-toto/in-toto/blob/74da7a/in_toto/models/layout.py#L420-L438
+
  * Add Root metadata class
 
  * Add classes for other complex metadata attributes, see 'signatures' (in
    Metadata) 'meta'/'targets' (in Timestamp, Snapshot, Targets), 'delegations'
    (in Targets), 'keys'/'roles' (in not yet existent 'Delegation'), ...
+
+ * Ticketize this todo list (on GitHub)
 
 """
 # Imports
@@ -39,11 +45,7 @@ from securesystemslib.util import (
 )
 from securesystemslib.storage import StorageBackendInterface
 from securesystemslib.keys import create_signature, verify_signature
-from tuf.repository_lib import (
-    _strip_version_number
-)
 
-import iso8601
 import tuf.formats
 import tuf.exceptions
 
@@ -213,8 +215,9 @@ class Metadata():
 
         Arguments:
             key: A securesystemslib-style private key object used for signing.
-            append: A boolean indicating if the signature should be appended
-                to the list of signatures or replace them.
+            append: A boolean indicating if the signature should be appended to
+                the list of signatures or replace any existing signatures. The
+                default behaviour is to replace signatures.
 
         Raises:
             securesystemslib.exceptions.FormatError: Key argument is malformed.
@@ -275,7 +278,7 @@ class Metadata():
 class Signed:
     """A base class for the signed part of TUF metadata.
 
-    Objects with base class Signed are usually included in a Metablock object
+    Objects with base class Signed are usually included in a Metadata object
     on the signed attribute. This class provides attributes and methods that
     are common for all TUF metadata types (roles).
 
@@ -284,7 +287,7 @@ class Signed:
         version: The metadata version number.
         spec_version: The TUF specification version number (semver) the
             metadata format adheres to.
-        expires: The metadata expiration date in 'YYYY-MM-DDTHH:MM:SSZ' format.
+        expires: The metadata expiration datetime object
 
     """
     # NOTE: Signed is a stupid name, because this might not be signed yet, but
@@ -308,14 +311,15 @@ class Signed:
 
     # Deserialization (factories).
     @classmethod
-    def from_dict(cls, signed_dict) -> 'Signed':
+    def from_dict(cls, signed_dict: JsonDict) -> 'Signed':
         """Creates Signed object from its JSON/dict representation. """
 
         # Convert 'expires' TUF metadata string to a datetime object, which is
         # what the constructor expects and what we store. The inverse operation
         # is implemented in 'to_dict'.
-        signed_dict['expires'] = iso8601.parse_date(
-                signed_dict['expires']).replace(tzinfo=None)
+        signed_dict['expires'] = datetime.strptime(
+                signed_dict['expires'],
+                "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=None)
         # NOTE: We write the converted 'expires' back into 'signed_dict' above
         # so that we can pass it to the constructor as  '**signed_dict' below,
         # along with other fields that belong to Signed subclasses.
