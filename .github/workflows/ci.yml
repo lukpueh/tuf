@@ -12,15 +12,18 @@ jobs:
       # Run regular TUF tests on each OS/Python combination, plus special tests
       # (sslib master) and linters on Linux/Python3.x only.
       matrix:
-        python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [2.7, 3.9]
+        # python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
+        os: [ubuntu-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
         toxenv: [py]
         include:
           - python-version: 3.x
             os: ubuntu-latest
             toxenv: with-sslib-master
             experimental: true
-          - python-version: 3.x
+          # TODO: Change to 3.x once pylint fully supports Python 3.9
+          - python-version: 3.8
             os: ubuntu-latest
             toxenv: lint
 
@@ -44,10 +47,10 @@ jobs:
         with:
           # Use the system dependent pip cache directory found above
           path: ${{ steps.pip-cache.outputs.dir }}
-          # A full 'key'-match counts as cache hit
+          # An exact match with 'key' counts as cache hit
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
-          # A partial match with 'restore-keys' may be used as fallback, but it
-          # will create a new cache entry under the current key.
+          # A partial match via 'restore-keys' is used as fallback cache, but
+          # will still create a new cache entry under the current key.
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
@@ -57,3 +60,21 @@ jobs:
 
       - name: Run tox
         run: tox -vv -e ${{ matrix.toxenv }}
+
+      - name: Publish coverage
+        uses: coverallsapp/github-action@v1
+        with:
+          path-to-lcov: tests/.coverage
+          github-token: ${{ secrets.github_token }}
+          flag-name: run-${{ matrix.os }}-${{ matrix.python-version }}
+          parallel: true
+
+  finish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Publish coverage (fin)
+      uses: coverallsapp/github-action@v1
+      with:
+        github-token: ${{ secrets.github_token }}
+        parallel-finished: true
