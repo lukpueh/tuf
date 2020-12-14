@@ -1344,7 +1344,8 @@ class TestUpdater(unittest_toolbox.Modified_TestCase):
       self.repository_updater.download_target(targetinfo, bad_destination_directory)
 
     except OSError as e:
-      self.assertTrue(e.errno == errno.ENAMETOOLONG or e.errno == errno.ENOENT)
+      self.assertTrue(e.errno == errno.ENAMETOOLONG or e.errno == errno.ENOENT,
+        repr(e) + ": " + repr(e.errno))
 
     else:
       self.fail('Expected an OSError of type ENAMETOOLONG or ENOENT')
