@@ -64,7 +64,7 @@ jobs:
           tox -e ${{ matrix.toxenv }}
           cp tests/.coverage .
 
-      - name: coveralls (fin)
+      - name: Publish coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
           COVERALLS_PARALLEL: 'true'
@@ -78,7 +78,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: coveralls (fin)
+      - name: Publish coverage (fin)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
         run: |
