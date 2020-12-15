@@ -64,25 +64,22 @@ jobs:
           tox -e ${{ matrix.toxenv }}
           cp tests/.coverage .
 
-      - name: coveralls
+      - name: coveralls (fin)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
-        run: coveralls debug
+          COVERALLS_PARALLEL: 'true'
+          COVERALLS_FLAG_NAME: ${{ runner.os }} / Python ${{ matrix.python-version }}
+        run: |
+          cp tests/.coverage* .
+          coveralls
 
-  #     - name: Publish coverage
-  #       if: matrix.toxenv == 'py'
-  #       uses: AndreMiras/coveralls-python-action@v20201129
-  #       with:
-  #         flag-name: ${{ runner.os }} / Python ${{ matrix.python-version }}
-  #         parallel: true
-  #         debug: true
 
-  # finish:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Publish coverage (fin)
-  #     uses: AndreMiras/coveralls-python-action@v20201129
-  #     with:
-  #       parallel-finished: true
-  #       debug: true
+  finish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: coveralls (fin)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          coveralls --finish
