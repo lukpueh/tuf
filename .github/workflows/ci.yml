@@ -67,11 +67,11 @@ jobs:
       - name: Publish coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
-          COVERALLS_PARALLEL: 'true'
-          COVERALLS_FLAG_NAME: ${{ runner.os }} / Python ${{ matrix.python-version }}
+          # COVERALLS_PARALLEL: 'true'
+          # COVERALLS_FLAG_NAME: ${{ runner.os }} / Python ${{ matrix.python-version }}
         run: |
-          cp tests/.coverage* .
-          coveralls
+          cp tests/.coverage .
+          coveralls --rcfile=tests/.coveragerc --verbose
 
 
   finish:
@@ -82,4 +82,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
         run: |
-          coveralls --finish
+          coveralls --rcfile=tests/.coveragerc --finish --verbose
