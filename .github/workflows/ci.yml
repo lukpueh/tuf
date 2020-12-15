@@ -61,14 +61,13 @@ jobs:
       - name: Run tox
         run: tox -vv -e ${{ matrix.toxenv }}
 
-
-    - name: Publish on coveralls.io
-      uses: AndreMiras/coveralls-python-action@v20201129
-      with:
-        if: matrix.toxenv == 'py'
-        flag-name: ${{ matrix.os }}-${{ matrix.python-version }}
-        base-path: tuf
-        parallel: true
+      - name: Publish on coveralls.io
+        uses: AndreMiras/coveralls-python-action@v20201129
+        with:
+          if: matrix.toxenv == 'py'
+          flag-name: ${{ matrix.os }}-${{ matrix.python-version }}
+          base-path: tuf
+          parallel: true
 
   finish:
     needs: build
