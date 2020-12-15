@@ -59,14 +59,15 @@ jobs:
           python -m pip install tox coveralls
 
       - name: Run tox
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+
         run: |
           tox -e ${{ matrix.toxenv }}
-          coveralls debug
-          cp tests/.coverage* .
-          coveralls debug
+          cp tests/.coverage .
 
+      - name: coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+        run: coveralls debug
 
   #     - name: Publish coverage
   #       if: matrix.toxenv == 'py'
