@@ -59,10 +59,7 @@ jobs:
           python -m pip install tox coveralls
 
       - name: Run tox
-
-        run: |
-          tox -e ${{ matrix.toxenv }}
-          cp tests/.coverage .
+        run: tox -e ${{ matrix.toxenv }}
 
       - name: Publish coverage
         env:
@@ -70,8 +67,7 @@ jobs:
           # COVERALLS_PARALLEL: 'true'
           # COVERALLS_FLAG_NAME: ${{ runner.os }} / Python ${{ matrix.python-version }}
         run: |
-          cp tests/.coverage .
-          coveralls --rcfile=tests/.coveragerc --verbose
+          coveralls --verbose
 
 
   finish:
@@ -82,4 +78,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
         run: |
-          coveralls --rcfile=tests/.coveragerc --finish --verbose
+          coveralls --finish --verbose
