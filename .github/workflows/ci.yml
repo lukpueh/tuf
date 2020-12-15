@@ -61,7 +61,7 @@ jobs:
       - name: Run tox
         run: |
           tox -e ${{ matrix.toxenv }}
-          cp tests/.coverage .
+          cp tests/.coverage* .
 
       - name: Publish coverage
         if: matrix.toxenv == 'py'
