@@ -59,21 +59,22 @@ jobs:
           python -m pip install tox
 
       - name: Run tox
-        run: tox -vv -e ${{ matrix.toxenv }}
+        run: |
+          tox -e ${{ matrix.toxenv }}
+          cp tests/.coverage .
 
-      - name: Publish on coveralls.io
+      - name: Publish coverage
         if: matrix.toxenv == 'py'
         uses: AndreMiras/coveralls-python-action@v20201129
         with:
           flag-name: ${{ runner.os }} / Python ${{ matrix.python-version }}
-          base-path: tests
           parallel: true
 
   finish:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Publish on coveralls.io (fin)
+    - name: Publish coverage (fin)
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
         parallel-finished: true
