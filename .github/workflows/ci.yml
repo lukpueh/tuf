@@ -12,7 +12,7 @@ jobs:
       # Run regular TUF tests on each OS/Python combination, plus special tests
       # (sslib master) and linters on Linux/Python3.x only.
       matrix:
-        python-version: [2.7, 3.9]
+        python-version: [3.9]
         # python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
         os: [ubuntu-latest]
         # os: [ubuntu-latest, macos-latest, windows-latest]
@@ -69,6 +69,7 @@ jobs:
         with:
           flag-name: ${{ runner.os }} / Python ${{ matrix.python-version }}
           parallel: true
+          debug: true
 
   finish:
     needs: build
@@ -78,3 +79,4 @@ jobs:
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
         parallel-finished: true
+        debug: true
