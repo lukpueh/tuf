@@ -79,6 +79,8 @@ jobs:
         uses: pypa/gh-action-pypi-publish@717ba43cfbb0387f6ce311b169a825772f54d295
         with:
           user: __token__
+          # TODO: remove 'repository_url' to use https://pypi.org/
+          repository_url: https://test.pypi.org/legacy/
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Finalize GitHub release
