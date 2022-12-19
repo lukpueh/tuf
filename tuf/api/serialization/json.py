@@ -24,14 +24,12 @@ from securesystemslib.serialization import JSONSerializer as BaseJSONSerializer
 from tuf.api.metadata import Metadata, Signed
 from tuf.api.serialization import (
     DeserializationError,
-    MetadataDeserializer,
-    MetadataSerializer,
     SerializationError,
     SignedSerializer,
 )
 
 
-class JSONDeserializer(MetadataDeserializer, BaseJSONDeserializer):
+class JSONDeserializer(BaseJSONDeserializer):
     """Provides JSON to Metadata deserialize method."""
 
     def deserialize(self, raw_data: bytes) -> Metadata:
@@ -47,7 +45,7 @@ class JSONDeserializer(MetadataDeserializer, BaseJSONDeserializer):
         return metadata_obj
 
 
-class JSONSerializer(MetadataSerializer, BaseJSONSerializer):
+class JSONSerializer(BaseJSONSerializer):
     """Provides Metadata to JSON serialize method.
 
     Args:
