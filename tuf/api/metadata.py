@@ -58,6 +58,7 @@ from securesystemslib.util import persist_temp_file
 
 from tuf.api.exceptions import LengthOrHashMismatchError, UnsignedMetadataError
 from tuf.api.serialization import (
+    JSONSerializable,
     MetadataDeserializer,
     MetadataSerializer,
     SignedSerializer,
@@ -81,7 +82,7 @@ TOP_LEVEL_ROLE_NAMES = {_ROOT, _TIMESTAMP, _SNAPSHOT, _TARGETS}
 T = TypeVar("T", "Root", "Timestamp", "Snapshot", "Targets")
 
 
-class Metadata(Generic[T]):
+class Metadata(Generic[T], JSONSerializable):
     """A container for signed TUF metadata.
 
     Provides methods to convert to and from dictionary, read and write to and

@@ -17,6 +17,8 @@ API objects.
 import abc
 from typing import TYPE_CHECKING
 
+from securesystemslib.serialization import JSONSerializable
+
 from tuf.api.exceptions import RepositoryError
 
 if TYPE_CHECKING:

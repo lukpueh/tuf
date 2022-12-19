@@ -12,6 +12,10 @@ import json
 from typing import Optional
 
 from securesystemslib.formats import encode_canonical
+from securesystemslib.serialization import (
+    JSONDeserializer as BaseJSONDeserializer,
+)
+from securesystemslib.serialization import JSONSerializer as BaseJSONSerializer
 
 # pylint: disable=cyclic-import
 # ... to allow de/serializing Metadata and Signed objects here, while also
@@ -27,13 +31,14 @@ from tuf.api.serialization import (
 )
 
 
-class JSONDeserializer(MetadataDeserializer):
+class JSONDeserializer(MetadataDeserializer, BaseJSONDeserializer):
     """Provides JSON to Metadata deserialize method."""
 
     def deserialize(self, raw_data: bytes) -> Metadata:
         """Deserialize utf-8 encoded JSON bytes into Metadata object."""
+
         try:
-            json_dict = json.loads(raw_data.decode("utf-8"))
+            json_dict = BaseJSONDeserializer.deserialize(self, raw_data)
             metadata_obj = Metadata.from_dict(json_dict)
 
         except Exception as e:
@@ -42,7 +47,7 @@ class JSONDeserializer(MetadataDeserializer):
         return metadata_obj
 
 
-class JSONSerializer(MetadataSerializer):
+class JSONSerializer(MetadataSerializer, BaseJSONSerializer):
     """Provides Metadata to JSON serialize method.
 
     Args:
@@ -55,21 +60,14 @@ class JSONSerializer(MetadataSerializer):
     """
 
     def __init__(self, compact: bool = False, validate: Optional[bool] = False):
-        self.compact = compact
+        BaseJSONSerializer.__init__(self, compact)
         self.validate = validate
 
     def serialize(self, metadata_obj: Metadata) -> bytes:
         """Serialize Metadata object into utf-8 encoded JSON bytes."""
 
         try:
-            indent = None if self.compact else 1
-            separators = (",", ":") if self.compact else (",", ": ")
-            json_bytes = json.dumps(
-                metadata_obj.to_dict(),
-                indent=indent,
-                separators=separators,
-                sort_keys=True,
-            ).encode("utf-8")
+            json_bytes = BaseJSONSerializer.serialize(self, metadata_obj)
 
             if self.validate:
                 try:
