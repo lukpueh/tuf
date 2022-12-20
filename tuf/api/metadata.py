@@ -58,9 +58,9 @@ from securesystemslib.util import persist_temp_file
 
 from tuf.api.exceptions import LengthOrHashMismatchError, UnsignedMetadataError
 from tuf.api.serialization import (
-    BaseDeserializer,
-    BaseSerializer,
     JSONSerializable,
+    MetadataDeserializer,
+    MetadataSerializer,
     SerializationError,
     SerializationMixin,
     SignedSerializer,
@@ -203,14 +203,14 @@ class Metadata(Generic[T], JSONSerializable, SerializationMixin):
         )
 
     @staticmethod
-    def _default_deserializer() -> BaseDeserializer:
+    def _default_deserializer() -> MetadataDeserializer:
         """Default Deserializer to be used for deserialization."""
         # pylint: disable=import-outside-toplevel
         from tuf.api.serialization.json import JSONDeserializer
         return JSONDeserializer()
 
     @staticmethod
-    def _default_serializer() -> BaseSerializer:
+    def _default_serializer() -> MetadataSerializer:
         """Default Serializer to be used for serialization."""
         # pylint: disable=import-outside-toplevel
         from tuf.api.serialization.json import JSONSerializer

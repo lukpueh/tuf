@@ -18,11 +18,10 @@ import abc
 from typing import TYPE_CHECKING
 
 from securesystemslib.serialization import (
-    BaseDeserializer,
-    BaseSerializer,
-    JSONSerializable,
-    SerializationMixin,
+    BaseDeserializer as MetadataDeserializer,
 )
+from securesystemslib.serialization import BaseSerializer as MetadataSerializer
+from securesystemslib.serialization import JSONSerializable, SerializationMixin
 
 from tuf.api.exceptions import RepositoryError
 
