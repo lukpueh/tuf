@@ -64,7 +64,7 @@ class LocalRepository(Repository):
         # HACK: access Updater internals
         # pylint: disable=protected-access
         if role in self.updater._trusted_set:
-            return copy.deepcopy(self.updater._trusted_set[role])
+            return Metadata(copy.deepcopy(self.updater._trusted_set[role]))
 
         # otherwise we're creating metadata from scratch
         md = Metadata(Targets())
