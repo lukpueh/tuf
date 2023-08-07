@@ -155,13 +155,19 @@ class TrustedMetadataSet(abc.Mapping):
             raise RuntimeError("Cannot update root after timestamp")
         logger.debug("Updating root")
 
-        new_root = self._unwrapper.unwrap_root(data, self.root)
+        new_root, new_root_bytes, new_root_signatures = self._unwrapper.unwrap(
+            Root, data, self.root
+        )
+        new_root = cast(Root, new_root)
 
         if new_root.version != self.root.version + 1:
             raise exceptions.BadVersionNumberError(
                 f"Expected root version {self.root.version + 1}"
                 f" instead got version {new_root.version}"
             )
+
+        # Verify that new root is signed by itself
+        new_root.verify_delegate(Root.type, new_root_bytes, new_root_signatures)
 
         self._trusted_set[Root.type] = new_root
         logger.debug("Updated root v%d", new_root.version)
@@ -199,9 +205,8 @@ class TrustedMetadataSet(abc.Mapping):
         # No need to check for 5.3.11 (fast forward attack recovery):
         # timestamp/snapshot can not yet be loaded at this point
 
-        new_timestamp = cast(
-            Timestamp, self._unwrapper.unwrap(data, self.root, Timestamp)
-        )
+        new_timestamp, _, _ = self._unwrapper.unwrap(Timestamp, data, self.root)
+        new_timestamp = cast(Timestamp, new_timestamp)
 
         # If an existing trusted timestamp is updated,
         # check for a rollback attack
@@ -289,9 +294,8 @@ class TrustedMetadataSet(abc.Mapping):
         if not trusted:
             snapshot_meta.verify_length_and_hashes(data)
 
-        new_snapshot = cast(
-            Snapshot, self._unwrapper.unwrap(data, self.root, Snapshot)
-        )
+        new_snapshot, _, _ = self._unwrapper.unwrap(Snapshot, data, self.root)
+        new_snapshot = cast(Snapshot, new_snapshot)
 
         # version not checked against meta version to allow old snapshot to be
         # used in rollback protection: it is checked when targets is updated
@@ -392,9 +396,10 @@ class TrustedMetadataSet(abc.Mapping):
 
         meta.verify_length_and_hashes(data)
 
-        new_delegate = cast(
-            Targets, self._unwrapper.unwrap(data, delegator, Targets, role_name)
+        new_delegate, _, _ = self._unwrapper.unwrap(
+            Targets, data, delegator, role_name
         )
+        new_delegate = cast(Targets, new_delegate)
 
         version = new_delegate.version
         if version != meta.version:
@@ -416,7 +421,10 @@ class TrustedMetadataSet(abc.Mapping):
         Note that an expired initial root is considered valid: expiry is
         only checked for the final root in ``update_timestamp()``.
         """
-        new_root = self._unwrapper.unwrap_root(data)
+        new_root, new_root_bytes, new_root_signatures = self._unwrapper.unwrap(
+            Root, data
+        )
+        new_root.verify_delegate(Root.type, new_root_bytes, new_root_signatures)
 
         self._trusted_set[Root.type] = new_root
         logger.debug("Loaded trusted root v%d", new_root.version)

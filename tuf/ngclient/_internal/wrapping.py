@@ -5,7 +5,9 @@
 
 """
 import abc
-from typing import Optional, Type, Union
+from typing import Dict, Optional, Tuple, Type, Union
+
+from securesystemslib.signer import Signature
 
 from tuf.api import exceptions
 from tuf.api.metadata import Metadata, Root, Signed, Targets
@@ -17,7 +19,7 @@ class Unwrapper(metaclass=abc.ABCMeta):
     """Interface for verifying TUF payload unwrappers."""
 
     @staticmethod
-    def _validate_payload_type(signed: Signed, expected: Type[Signed]) -> None:
+    def _validate_signed_type(signed: Signed, expected: Type[Signed]) -> None:
         if signed.type != expected.type:
             raise exceptions.RepositoryError(
                 f"Expected '{expected.type}', got '{signed.type}'"
@@ -26,83 +28,57 @@ class Unwrapper(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def unwrap(
         self,
-        wrapper: bytes,
-        delegator: Delegator,
         role_cls: Type[Signed],
+        wrapper: bytes,
+        delegator: Optional[Delegator] = None,
         role_name: Optional[str] = None,
-    ) -> Signed:
-        """Unwrap, verify and return TUF payload (non-root).
+    ) -> Tuple[Signed, bytes, Dict[str, Signature]]:
+        """Unwrap and verify TUF payload from signature wrapper.
 
-        Use ``unwrap_root``for special verification.
+        Verification includes payload type validation, and signature
+        verification, if a delegator is passed.
 
         Arguments:
-            wrapper: Raw signature wrapper bytes for role to verify.
-            delegator: Delegator for the role to verify.
-            role_cls: Class of the role to verify.
-            role_name: Name of the role to verify. Defaults to
+            role_cls: Class of the role to unwrap.
+            wrapper: Raw signature wrapper bytes for to unwrap.
+            delegator: Delegator for the role to unwrap and verify. Verification
+                is skipped, if no delegator is passed.
+            role_name: Name of the role to look up in the delegator. Defaults to
                 `role_cls.type``, if not passed.
 
         Raises:
             tuf.exceptions.RepositoryError: Unexpected payload type
 
         Returns:
-            Verified payload.
+            Tuple: (Deserialized payload, payload bytes, signatures)
         """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def unwrap_root(
-        self, wrapper: bytes, delegator: Optional[Root] = None
-    ) -> Root:
-        """Unwrap, verify and return TUF payload of type root.
-
-        NOTE: ``unwrap_root`` differs from other ``wrap``, as it
-        - may skip delegator verification for root v1
-        - includes self-verification
-
-        wrapper: Raw signature wrapper bytes for role to verify.
-        delegator: Previous root to verify payload. If not passed, delegator
-                verification is skipped.
-
-        Raises:
-            tuf.exceptions.RepositoryError: Unexpected payload type
-
-        Returns:
-            Verified payload.
-        """
-
         raise NotImplementedError
 
 
 class MetadataUnwrapper(Unwrapper):
-    """Unwrapper implementation for Metadata payloads."""
+    """Unwrapper implementation for Metadata payloads.
+
+    Order of unwrapping:
+    1. Deserialize
+    2. Validate inner payload type
+    3. Verify signatures
+
+    """
 
     def unwrap(
         self,
-        wrapper: bytes,
-        delegator: Delegator,
         role_cls: Type[Signed],
+        wrapper: bytes,
+        delegator: Optional[Delegator] = None,
         role_name: Optional[str] = None,
-    ) -> Signed:  # noqa: D102
-        if role_name is None:
-            role_name = role_cls.type
-
+    ) -> Tuple[Signed, bytes, Dict[str, Signature]]:  # noqa: D102
         md = Metadata.from_bytes(wrapper)
-        self._validate_payload_type(md.signed, role_cls)
-
-        delegator.verify_delegate(role_name, md.signed_bytes, md.signatures)
-
-        return md.signed
-
-    def unwrap_root(
-        self, wrapper: bytes, delegator: Optional[Root] = None
-    ) -> Root:  # noqa: D102
-        md = Metadata[Root].from_bytes(wrapper)
-        self._validate_payload_type(md.signed, Root)
+        self._validate_signed_type(md.signed, role_cls)
 
         if delegator:
-            delegator.verify_delegate(Root.type, md.signed_bytes, md.signatures)
+            if role_name is None:
+                role_name = role_cls.type
 
-        md.signed.verify_delegate(Root.type, md.signed_bytes, md.signatures)
+            delegator.verify_delegate(role_name, md.signed_bytes, md.signatures)
 
-        return md.signed
+        return md.signed, md.signed_bytes, md.signatures
