@@ -10,7 +10,9 @@ from typing import Dict, Optional, Tuple, Type, Union
 from securesystemslib.signer import Signature
 
 from tuf.api import exceptions
-from tuf.api.metadata import Metadata, Root, Signed, Targets
+from tuf.api._payload import Root, Signed, Targets
+from tuf.api.dsse import Envelope
+from tuf.api.metadata import Metadata
 
 Delegator = Union[Root, Targets]
 
@@ -82,3 +84,46 @@ class MetadataUnwrapper(Unwrapper):
             delegator.verify_delegate(role_name, md.signed_bytes, md.signatures)
 
         return md.signed, md.signed_bytes, md.signatures
+
+
+class EnvelopeUnwrapper(Unwrapper):
+    """Unwrapper implementation for Envelope payloads.
+
+    Order of unwrapping:
+    1. Deserializer wrapper only
+    2. Validate outer payload type
+    3. Verify signatures
+    4. Validate inner payload type
+    5. Deserialize payload
+
+    """
+
+    @staticmethod
+    def _validate_envelope_payload_type(envelope: Envelope) -> None:
+        # pylint: disable=protected-access
+        if envelope.payload_type != Envelope._DEFAULT_PAYLOAD_TYPE:
+            raise exceptions.RepositoryError(
+                f"Expected '{Envelope._DEFAULT_PAYLOAD_TYPE}', "
+                f"got '{envelope.payload_type}'"
+            )
+
+    def unwrap(
+        self,
+        role_cls: Type[Signed],
+        wrapper: bytes,
+        delegator: Optional[Delegator] = None,
+        role_name: Optional[str] = None,
+    ) -> Tuple[Signed, bytes, Dict[str, Signature]]:  # noqa: D102
+        envelope = Envelope.from_bytes(wrapper)
+        self._validate_envelope_payload_type(envelope)
+        if delegator:
+            if role_name is None:
+                role_name = role_cls.type
+            delegator.verify_delegate(
+                role_name, envelope.payload, envelope.signatures
+            )
+
+        signed = envelope.get_signed()
+        self._validate_signed_type(signed, role_cls)
+
+        return signed, envelope.payload, envelope.signatures
