@@ -10,7 +10,7 @@ from typing import Dict, Optional, Tuple, Type, Union
 from securesystemslib.signer import Signature
 
 from tuf.api import exceptions
-from tuf.api._payload import Root, Signed, Targets
+from tuf.api._payload import Root, T, Targets
 from tuf.api.dsse import Envelope
 from tuf.api.metadata import Metadata
 
@@ -21,7 +21,7 @@ class Unwrapper(metaclass=abc.ABCMeta):
     """Interface for verifying TUF payload unwrappers."""
 
     @staticmethod
-    def _validate_signed_type(signed: Signed, expected: Type[Signed]) -> None:
+    def _validate_signed_type(signed: T, expected: Type[T]) -> None:
         if signed.type != expected.type:
             raise exceptions.RepositoryError(
                 f"Expected '{expected.type}', got '{signed.type}'"
@@ -30,11 +30,11 @@ class Unwrapper(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def unwrap(
         self,
-        role_cls: Type[Signed],
+        role_cls: Type[T],
         wrapper: bytes,
         delegator: Optional[Delegator] = None,
         role_name: Optional[str] = None,
-    ) -> Tuple[Signed, bytes, Dict[str, Signature]]:
+    ) -> Tuple[T, bytes, Dict[str, Signature]]:
         """Unwrap and verify TUF payload from signature wrapper.
 
         Verification includes payload type validation, and signature
@@ -69,12 +69,12 @@ class MetadataUnwrapper(Unwrapper):
 
     def unwrap(
         self,
-        role_cls: Type[Signed],
+        role_cls: Type[T],
         wrapper: bytes,
         delegator: Optional[Delegator] = None,
         role_name: Optional[str] = None,
-    ) -> Tuple[Signed, bytes, Dict[str, Signature]]:  # noqa: D102
-        md = Metadata.from_bytes(wrapper)
+    ) -> Tuple[T, bytes, Dict[str, Signature]]:  # noqa: D102
+        md = Metadata[T].from_bytes(wrapper)
         self._validate_signed_type(md.signed, role_cls)
 
         if delegator:
@@ -109,12 +109,12 @@ class EnvelopeUnwrapper(Unwrapper):
 
     def unwrap(
         self,
-        role_cls: Type[Signed],
+        role_cls: Type[T],
         wrapper: bytes,
         delegator: Optional[Delegator] = None,
         role_name: Optional[str] = None,
-    ) -> Tuple[Signed, bytes, Dict[str, Signature]]:  # noqa: D102
-        envelope = Envelope.from_bytes(wrapper)
+    ) -> Tuple[T, bytes, Dict[str, Signature]]:  # noqa: D102
+        envelope = Envelope[T].from_bytes(wrapper)
         self._validate_envelope_payload_type(envelope)
         if delegator:
             if role_name is None:

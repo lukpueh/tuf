@@ -158,8 +158,6 @@ class TrustedMetadataSet(abc.Mapping):
         new_root, new_root_bytes, new_root_signatures = self._unwrapper.unwrap(
             Root, data, self.root
         )
-        new_root = cast(Root, new_root)
-
         if new_root.version != self.root.version + 1:
             raise exceptions.BadVersionNumberError(
                 f"Expected root version {self.root.version + 1}"
@@ -206,7 +204,6 @@ class TrustedMetadataSet(abc.Mapping):
         # timestamp/snapshot can not yet be loaded at this point
 
         new_timestamp, _, _ = self._unwrapper.unwrap(Timestamp, data, self.root)
-        new_timestamp = cast(Timestamp, new_timestamp)
 
         # If an existing trusted timestamp is updated,
         # check for a rollback attack
@@ -295,7 +292,6 @@ class TrustedMetadataSet(abc.Mapping):
             snapshot_meta.verify_length_and_hashes(data)
 
         new_snapshot, _, _ = self._unwrapper.unwrap(Snapshot, data, self.root)
-        new_snapshot = cast(Snapshot, new_snapshot)
 
         # version not checked against meta version to allow old snapshot to be
         # used in rollback protection: it is checked when targets is updated
@@ -399,7 +395,6 @@ class TrustedMetadataSet(abc.Mapping):
         new_delegate, _, _ = self._unwrapper.unwrap(
             Targets, data, delegator, role_name
         )
-        new_delegate = cast(Targets, new_delegate)
 
         version = new_delegate.version
         if version != meta.version:
