@@ -66,7 +66,11 @@ from typing import Dict, Iterator, Optional, Union, cast
 
 from tuf.api import exceptions
 from tuf.api.metadata import Root, Signed, Snapshot, Targets, Timestamp
-from tuf.ngclient._internal.wrapping import MetadataUnwrapper
+from tuf.ngclient._internal.wrapping import (
+    EnvelopeUnwrapper,
+    MetadataUnwrapper,
+    Unwrapper,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,19 +83,24 @@ class TrustedMetadataSet(abc.Mapping):
     to update the metadata with the caller making decisions on what is updated.
     """
 
-    def __init__(self, root_data: bytes):
+    def __init__(self, root_data: bytes, use_dsse: bool = False):
         """Initialize ``TrustedMetadataSet`` by loading trusted root metadata.
 
         Args:
             root_data: Trusted root metadata as bytes. Note that this metadata
                 will only be verified by itself: it is the source of trust for
                 all metadata in the ``TrustedMetadataSet``
+            use_dsse:
 
         Raises:
             RepositoryError: Metadata failed to load or verify. The actual
                 error type and content will contain more details.
         """
-        self._unwrapper = MetadataUnwrapper()
+        if use_dsse:
+            self._unwrapper: Unwrapper = EnvelopeUnwrapper()
+        else:
+            self._unwrapper = MetadataUnwrapper()
+
         self._trusted_set: Dict[str, Signed] = {}
         self.reference_time = datetime.datetime.utcnow()
 

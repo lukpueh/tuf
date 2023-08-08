@@ -26,6 +26,8 @@ class UpdaterConfig:
 
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     max_root_rotations: int = 32
     max_delegations: int = 32
     root_max_length: int = 512000  # bytes
@@ -33,3 +35,4 @@ class UpdaterConfig:
     snapshot_max_length: int = 2000000  # bytes
     targets_max_length: int = 5000000  # bytes
     prefix_targets_with_hash: bool = True
+    use_dsse: bool = False

@@ -94,9 +94,11 @@ class Updater:
 
         # Read trusted local root metadata
         data = self._load_local_metadata(Root.type)
-        self._trusted_set = trusted_metadata_set.TrustedMetadataSet(data)
         self._fetcher = fetcher or requests_fetcher.RequestsFetcher()
         self.config = config or UpdaterConfig()
+        self._trusted_set = trusted_metadata_set.TrustedMetadataSet(
+            data, self.config.use_dsse
+        )
 
     def refresh(self) -> None:
         """Refresh top-level metadata.
