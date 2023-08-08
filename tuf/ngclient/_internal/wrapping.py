@@ -115,15 +115,18 @@ class EnvelopeUnwrapper(Unwrapper):
         role_name: Optional[str] = None,
     ) -> Tuple[T, bytes, Dict[str, Signature]]:  # noqa: D102
         envelope = Envelope[T].from_bytes(wrapper)
+
+        # TODO: Envelope stores signatures as list, but `verify_delegate`
+        # expects a dict. Should we change the envelope model?
+        signatures = {sig.keyid: sig for sig in envelope.signatures}
+
         self._validate_envelope_payload_type(envelope)
         if delegator:
             if role_name is None:
                 role_name = role_cls.type
-            delegator.verify_delegate(
-                role_name, envelope.payload, envelope.signatures
-            )
+            delegator.verify_delegate(role_name, envelope.pae(), signatures)
 
         signed = envelope.get_signed()
         self._validate_signed_type(signed, role_cls)
 
-        return signed, envelope.payload, envelope.signatures
+        return signed, envelope.pae(), signatures
