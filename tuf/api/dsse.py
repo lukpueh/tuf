@@ -6,15 +6,24 @@ from typing import Generic, Type, cast
 
 from securesystemslib.dsse import Envelope as BaseEnvelope
 
-from tuf.api._payload import (
+from tuf.api._payload import (  # pylint: disable=unused-import
     _ROOT,
     _SNAPSHOT,
     _TARGETS,
     _TIMESTAMP,
+    SPECIFICATION_VERSION,
+    TOP_LEVEL_ROLE_NAMES,
+    BaseFile,
+    DelegatedRole,
+    Delegations,
+    MetaFile,
+    Role,
     Root,
     Signed,
     Snapshot,
+    SuccinctRoles,
     T,
+    TargetFile,
     Targets,
     Timestamp,
 )
