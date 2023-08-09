@@ -1,7 +1,19 @@
-"""Serve simple DSSE repo (demo).
+"""Serve basic static TUF repo with DSSE metadata (demo).
 
 Serves ad-hoc generated top-level metadata and single target file from
-localhost to be used with example client with the ``--use-dsse`` flag.
+localhost to demo client-side DSSE support.
+
+Usage:
+  - Install python-tuf (with DSSE support -- theupdateframework/python-tuf#2385)
+  - Start this script (quit with ctrl+z)
+  - Download target with python-tuf example client
+
+  ./client tofu
+  ./client download --use-dsse file1.txt
+
+
+Example client docs:
+  https://github.com/theupdateframework/python-tuf/blob/develop/examples/client
 
 """
 
@@ -41,11 +53,11 @@ key = generate_ed25519_key()
 public_key = SSlibKey.from_securesystemslib_key(key)
 signer = SSlibSigner(key)
 
-# Perform top-level delegation, i.e. authorize signing keys for top-level roles in root
+# Authorize signing keys for top-level roles in root
 for role_name in TOP_LEVEL_ROLE_NAMES:
     roles["root"].add_key(public_key, role_name)
 
-# Serve metadata and target file from temporary directory.
+# Create temporary directory to serve metadata and target file from
 with tempfile.TemporaryDirectory() as tmp_dir:
     repo_dir = Path(tmp_dir)
     metadata_dir = repo_dir / "metadata"
@@ -53,15 +65,15 @@ with tempfile.TemporaryDirectory() as tmp_dir:
     target_name = "file1.txt"
     target_path = target_dir / target_name
 
-    # Create metadata and targets dirs, and target file
+    # Create metadata and targets dirs, and target file in default locations
     os.mkdir(metadata_dir)
     os.mkdir(target_dir)
     with open(target_path, "wt") as target_file:
         target_file.write("hello dsse!")
 
     # Add info about target file to targets role, and create hash prefixed
-    # symlinks to the target file in the repository, which is required by the client for
-    # target file path resolution.
+    # symlink to the target file in the repository.
+    # This is required by the client for target file path resolution.
     target_file_info = TargetFile.from_file(target_name, target_path)
     for digest in target_file_info.hashes.values():
         TARGET_ALIAS = target_dir / f"{digest}.{target_name}"
@@ -69,8 +81,8 @@ with tempfile.TemporaryDirectory() as tmp_dir:
 
     roles["targets"].targets = {target_name: target_file_info}
 
-    # Set expiration, and sign and persist all metadata. All metadata filenames are prefixed
-    # with their version number except timestamp.
+    # Set expiration, sign and persist all metadata using DSSE Envelopes.
+    # Metadata filenames are prefixed with version number except timestamp.
     for role_name, role in roles.items():
         role.expires = expiry
         envelope = Envelope.from_signed(role)
@@ -84,7 +96,7 @@ with tempfile.TemporaryDirectory() as tmp_dir:
         with open(path, "wb") as f:
             f.write(envelope.to_bytes())
 
-    # Serve HTTP
+    # Serve metadata and targetfile via HTTP
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=repo_dir, **kwargs)
@@ -93,7 +105,7 @@ with tempfile.TemporaryDirectory() as tmp_dir:
     with socketserver.TCPServer(("", port), Handler) as httpd:
         print(
             f"Serving TUF repo on http://127.0.0.1:{port}/\n\n"
-            "Example client usage:\n"
+            "Download target with example client:\n"
             " \t./client tofu\n"
             " \t./client download --use-dsse file1.txt\n"
         )
