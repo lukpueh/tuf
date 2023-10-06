@@ -5,6 +5,13 @@
 """
 
 from dataclasses import dataclass
+from enum import Flag, unique
+
+
+@unique
+class Wrapping:
+    METADATA = 1
+    ENVELOPE = 2
 
 
 @dataclass
@@ -36,4 +43,4 @@ class UpdaterConfig:
     snapshot_max_length: int = 2000000  # bytes
     targets_max_length: int = 5000000  # bytes
     prefix_targets_with_hash: bool = True
-    use_dsse: bool = False
+    wrapping: Wrapping = Wrapping.METADATA
