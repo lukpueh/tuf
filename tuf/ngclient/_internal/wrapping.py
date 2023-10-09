@@ -1,7 +1,6 @@
 # Copyright the TUF contributors
 # SPDX-License-Identifier: MIT OR Apache-2.0
-
-"""Extract and verify TUF payloads from Metadata or Envelope. """
+"""Extract and verify TUF payloads from Metadata or Envelope."""
 from typing import Dict, Optional, Tuple, Type, Union
 
 from securesystemslib.signer import Signature

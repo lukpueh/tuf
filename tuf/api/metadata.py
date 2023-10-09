@@ -36,8 +36,7 @@ from securesystemslib.signer import Signature, Signer
 from securesystemslib.storage import FilesystemBackend, StorageBackendInterface
 from securesystemslib.util import persist_temp_file
 
-# Expose payload classes via ``tuf.api.metadata`` to maintain the API,
-# even if they are unused in the local scope.
+# Expose all payload classes via ``tuf.api.metadata`` to preserve the API.
 from tuf.api._payload import (  # pylint: disable=unused-import
     _ROOT,
     _SNAPSHOT,

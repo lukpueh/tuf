@@ -1,4 +1,4 @@
-"""Low-level TUF Envelope API.
+"""Low-level TUF Envelope API. (experimental!)
 
 """
 import json
@@ -6,6 +6,8 @@ from typing import Generic, Type, cast
 
 from securesystemslib.dsse import Envelope as BaseEnvelope
 
+# Expose all payload classes via ``tuf.api.envelope`` as API alternative to
+# ``tuf.api.metadata``.
 from tuf.api._payload import (  # pylint: disable=unused-import
     _ROOT,
     _SNAPSHOT,
@@ -31,24 +33,53 @@ from tuf.api.serialization import DeserializationError, SerializationError
 
 
 class Envelope(Generic[T], BaseEnvelope):
-    """TODO: doc"""
+    """Dead Simple Signing Envelope (DSSE) for TUF payloads.
+
+    Signature creation and verification methods are provided by the base class
+    implementation in ``securesystemslib``.
+
+    """
 
     _DEFAULT_PAYLOAD_TYPE = "application/vnd.tuf+json"
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "Envelope[T]":
-        """TODO: doc"""
+        """Load TUF envelope from JSON bytes.
+
+        NOTE: Unlike ``tuf.api.metadata.Metadata.from_bytes``, this method
+        does not deserialize the contained payload. Use ``self.get_signed`` to
+        deserialize the payload.
+
+        Args:
+            data: Envelope content.
+
+        Raises:
+            tuf.api.serialization.DeserializationError:
+                The bytes cannot be deserialized.
+
+        Returns:
+            TUF ``Envelope`` object.
+        """
         try:
             envelope_dict = json.loads(data.decode())
             envelope = Envelope.from_dict(envelope_dict)
 
         except Exception as e:
-            raise SerializationError from e
+            raise DeserializationError from e
 
         return envelope
 
     def to_bytes(self) -> bytes:
-        """TODO: doc"""
+        """Return Envelope object as JSON bytes.
+
+        NOTE: Unlike ``tuf.api.metadata.Metadata.to_bytes``, this method does
+        not serialize the payload. Use ``Envelope.from_signed`` to serialize a
+        TUF Signed object and wrap it in an Envelope.
+
+        Raises:
+            tuf.api.serialization.SerializationError:
+                The envelope object cannot be serialized.
+        """
         try:
             envelope_dict = self.to_dict()
             json_bytes = json.dumps(envelope_dict).encode()
@@ -60,7 +91,15 @@ class Envelope(Generic[T], BaseEnvelope):
 
     @classmethod
     def from_signed(cls, signed: T) -> "Envelope[T]":
-        """TODO: doc"""
+        """Serialize payload as JSON bytes and wrap in new Envelope.
+
+        Args:
+            signed: TUF payload.
+
+        Raises:
+            tuf.api.serialization.SerializationError:
+                The signed object cannot be serialized.
+        """
         try:
             signed_dict = signed.to_dict()
             json_bytes = json.dumps(signed_dict).encode()
@@ -71,7 +110,13 @@ class Envelope(Generic[T], BaseEnvelope):
         return cls(json_bytes, cls._DEFAULT_PAYLOAD_TYPE, [])
 
     def get_signed(self) -> T:
-        """TODO: doc"""
+        """Unwrap TUF payload from Envelope and deserialize JSON bytes.
+
+        Raises:
+            tuf.api.serialization.SerializationError:
+                The signed object cannot be deserialized.
+        """
+
         try:
             payload_dict = json.loads(self.payload.decode())
 
