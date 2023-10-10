@@ -68,7 +68,7 @@ from typing import Dict, Iterator, Optional, Union, cast
 
 from tuf.api import exceptions
 from tuf.api.metadata import Root, Signed, Snapshot, Targets, Timestamp
-from tuf.ngclient._internal.wrapping import unwrap_envelop, unwrap_metadata
+from tuf.ngclient._internal.wrapping import unwrap_envelope, unwrap_metadata
 from tuf.ngclient.config import Wrapping
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ class TrustedMetadataSet(abc.Mapping):
         self.reference_time = datetime.datetime.utcnow()
 
         if wrapping is Wrapping.ENVELOPE:
-            self._unwrap = unwrap_envelop
+            self._unwrap = unwrap_envelope
         else:
             self._unwrap = unwrap_metadata
 

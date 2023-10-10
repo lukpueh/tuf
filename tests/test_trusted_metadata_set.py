@@ -26,7 +26,7 @@ from tuf.api.metadata import (
 )
 from tuf.api.serialization.json import JSONSerializer
 from tuf.ngclient._internal.trusted_metadata_set import TrustedMetadataSet
-from tuf.ngclient._internal.wrapping import unwrap_envelop
+from tuf.ngclient._internal.wrapping import unwrap_envelope
 
 logger = logging.getLogger(__name__)
 
@@ -474,8 +474,8 @@ class TestTrustedMetadataSet(unittest.TestCase):
 
     # TODO test updating over initial metadata (new keys, newer timestamp, etc)
 
-    def test_unwrap_envelop(self):
-        """Basic unit test for ``unwrap_envelop``.
+    def test_unwrap_envelope(self):
+        """Basic unit test for ``unwrap_envelope``.
 
         TODO: Test via trusted metadata set, analogously to ``unwrap_metadata``
         """
@@ -485,7 +485,7 @@ class TestTrustedMetadataSet(unittest.TestCase):
 
         # Unwrap unsigned envelope without verification
         envelope_bytes = envelope.to_bytes()
-        payload_obj, signed_bytes, signatures = unwrap_envelop(
+        payload_obj, signed_bytes, signatures = unwrap_envelope(
             Root, envelope_bytes
         )
         self.assertEqual(payload_obj, root)
@@ -495,11 +495,11 @@ class TestTrustedMetadataSet(unittest.TestCase):
         # Unwrap correctly signed envelope (use default role name)
         sig = envelope.sign(self.keystore[Root.type])
         envelope_bytes = envelope.to_bytes()
-        _, _, signatures = unwrap_envelop(Root, envelope_bytes, root)
+        _, _, signatures = unwrap_envelope(Root, envelope_bytes, root)
         self.assertDictEqual(signatures, {sig.keyid: sig})
 
         # Unwrap correctly signed envelope (with explicit role name)
-        _, _, signatures = unwrap_envelop(
+        _, _, signatures = unwrap_envelope(
             Root, envelope.to_bytes(), root, Root.type
         )
         self.assertDictEqual(signatures, {sig.keyid: sig})
@@ -509,13 +509,13 @@ class TestTrustedMetadataSet(unittest.TestCase):
         envelope_bad_type.payload_type = "foo"
         envelope_bad_type_bytes = envelope_bad_type.to_bytes()
         with self.assertRaises(exceptions.RepositoryError):
-            unwrap_envelop(Root, envelope_bad_type_bytes)
+            unwrap_envelope(Root, envelope_bad_type_bytes)
 
         # Fail unwrap envelop with unexpected payload type
         envelope_bad_signed = Envelope.from_signed(root)
         envelope_bad_signed_bytes = envelope_bad_signed.to_bytes()
         with self.assertRaises(exceptions.RepositoryError):
-            unwrap_envelop(Targets, envelope_bad_signed_bytes)
+            unwrap_envelope(Targets, envelope_bad_signed_bytes)
 
 
 if __name__ == "__main__":

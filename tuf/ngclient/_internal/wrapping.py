@@ -68,7 +68,7 @@ def unwrap_metadata(
     return md.signed, md.signed_bytes, md.signatures
 
 
-def unwrap_envelop(
+def unwrap_envelope(
     role_cls: Type[T],
     wrapper: bytes,
     delegator: Optional[Delegator] = None,
