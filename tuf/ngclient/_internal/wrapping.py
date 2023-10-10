@@ -98,9 +98,6 @@ def unwrap_envelop(
 
     """
     envelope = Envelope[T].from_bytes(wrapper)
-
-    # TODO: Envelope stores signatures as list, but `verify_delegate`
-    # expects a dict. Should we change the envelope model?
     signatures = {sig.keyid: sig for sig in envelope.signatures}
 
     _validate_envelope_payload_type(envelope)

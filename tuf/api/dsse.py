@@ -35,8 +35,17 @@ from tuf.api.serialization import DeserializationError, SerializationError
 class Envelope(Generic[T], BaseEnvelope):
     """Dead Simple Signing Envelope (DSSE) for TUF payloads.
 
-    Signature creation and verification methods are provided by the base class
-    implementation in ``securesystemslib``.
+    * Create signatures using the ``sign()`` inherited from the base class.
+    * Verify signatures using ``verify_delegate`` of a ``Root`` or ``Targets``
+      object::
+
+        # FIXME: Change ``envelope.signatures`` data type to dict
+        # FIXME: Make sure users don't pass ``envelope.payload`` to
+        # ``verify_delegate`` when they should pass ``envelope.pae()``.
+
+        signatures = {sig.keyid: sig for sig in envelope.signatures}
+        payload = envelope.pae()
+        delegator.verify_delegate(role.type, payload, signatures)
 
     """
 
