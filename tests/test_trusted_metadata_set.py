@@ -14,6 +14,7 @@ from securesystemslib.signer import SSlibSigner
 
 from tests import utils
 from tuf.api import exceptions
+from tuf.api.dsse import Envelope
 from tuf.api.metadata import (
     Metadata,
     MetaFile,
@@ -24,7 +25,10 @@ from tuf.api.metadata import (
     Timestamp,
 )
 from tuf.api.serialization.json import JSONSerializer
-from tuf.ngclient._internal.trusted_metadata_set import TrustedMetadataSet
+from tuf.ngclient._internal.trusted_metadata_set import (
+    TrustedMetadataSet,
+    _load_from_simple_envelope,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -471,6 +475,53 @@ class TestTrustedMetadataSet(unittest.TestCase):
             self.trusted_set.update_targets(targets)
 
     # TODO test updating over initial metadata (new keys, newer timestamp, etc)
+
+    def test_load_from_simple_envelope(self) -> None:
+        """Basic unit test for ``_load_from_simple_envelope`` helper.
+
+        TODO: Test via trusted metadata set tests like for traditional metadata
+        """
+        # pylint: disable=protected-access
+        metadata = Metadata.from_bytes(self.metadata[Root.type])
+        root = metadata.signed
+        envelope = Envelope.from_signed(root)
+
+        # Unwrap unsigned envelope without verification
+        envelope_bytes = envelope.to_bytes()
+        payload_obj, signed_bytes, signatures = _load_from_simple_envelope(
+            Root, envelope_bytes
+        )
+
+        self.assertEqual(payload_obj, root)
+        self.assertEqual(signed_bytes, envelope.pae())
+        self.assertDictEqual(signatures, {})
+
+        # Unwrap correctly signed envelope (use default role name)
+        sig = envelope.sign(self.keystore[Root.type])
+        envelope_bytes = envelope.to_bytes()
+        _, _, signatures = _load_from_simple_envelope(
+            Root, envelope_bytes, root
+        )
+        self.assertDictEqual(signatures, {sig.keyid: sig})
+
+        # Load correctly signed envelope (with explicit role name)
+        _, _, signatures = _load_from_simple_envelope(
+            Root, envelope.to_bytes(), root, Root.type
+        )
+        self.assertDictEqual(signatures, {sig.keyid: sig})
+
+        # Fail load envelope with unexpected 'payload_type'
+        envelope_bad_type = Envelope.from_signed(root)
+        envelope_bad_type.payload_type = "foo"
+        envelope_bad_type_bytes = envelope_bad_type.to_bytes()
+        with self.assertRaises(exceptions.RepositoryError):
+            _load_from_simple_envelope(Root, envelope_bad_type_bytes)
+
+        # Fail load envelope with unexpected payload type
+        envelope_bad_signed = Envelope.from_signed(root)
+        envelope_bad_signed_bytes = envelope_bad_signed.to_bytes()
+        with self.assertRaises(exceptions.RepositoryError):
+            _load_from_simple_envelope(Targets, envelope_bad_signed_bytes)
 
 
 if __name__ == "__main__":

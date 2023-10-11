@@ -46,12 +46,8 @@ from urllib import parse
 
 from tuf.api import exceptions
 from tuf.api.metadata import Root, Snapshot, TargetFile, Targets, Timestamp
-from tuf.ngclient._internal import (
-    requests_fetcher,
-    trusted_metadata_set,
-    wrapping,
-)
-from tuf.ngclient.config import UpdaterConfig
+from tuf.ngclient._internal import requests_fetcher, trusted_metadata_set
+from tuf.ngclient.config import UpdaterConfig, Wrapping
 from tuf.ngclient.fetcher import FetcherInterface
 
 logger = logging.getLogger(__name__)
@@ -101,12 +97,17 @@ class Updater:
         self._fetcher = fetcher or requests_fetcher.RequestsFetcher()
         self.config = config or UpdaterConfig()
 
-        unwrapper: Optional[wrapping.Unwrapper] = None
-        if self.config.use_dsse:
-            unwrapper = wrapping.EnvelopeUnwrapper()
+        supported_wrappings = [Wrapping.METADATA, Wrapping.ENVELOPE]
+
+        if self.config.wrapping not in supported_wrappings:
+            raise ValueError(
+                "wrapping config must be one of "
+                f"{supported_wrappings}, "
+                f"got '{self.config.wrapping}'"
+            )
 
         self._trusted_set = trusted_metadata_set.TrustedMetadataSet(
-            data, unwrapper
+            data, self.config.wrapping
         )
 
     def refresh(self) -> None:

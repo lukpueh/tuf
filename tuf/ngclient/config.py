@@ -5,6 +5,20 @@
 """
 
 from dataclasses import dataclass
+from enum import Flag, unique
+
+
+@unique
+class Wrapping(Flag):
+    """Flag to configure the expected metadata wrapping.
+
+    Args:
+        METADATA: Traditional TUF Metadata (canonical json).
+        ENVELOPE: DSSE. (experimental)
+    """
+
+    METADATA = 1
+    ENVELOPE = 2
 
 
 @dataclass
@@ -23,8 +37,7 @@ class UpdaterConfig:
             are used, target download URLs are formed by prefixing the filename
             with a hash digest of file content by default. This can be
             overridden by setting ``prefix_targets_with_hash`` to ``False``.
-        use_dsse: If true, expect metadata in a DSSE Envelope. Use
-            traditional Metadata (canonical json) otherwise.
+        wrapping: Expected metadata wrapping.
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -36,4 +49,4 @@ class UpdaterConfig:
     snapshot_max_length: int = 2000000  # bytes
     targets_max_length: int = 5000000  # bytes
     prefix_targets_with_hash: bool = True
-    use_dsse: bool = False
+    wrapping: Wrapping = Wrapping.METADATA
